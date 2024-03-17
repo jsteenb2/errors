@@ -62,6 +62,35 @@ func (f Frame) Format(s fmt.State, verb rune) {
 //  2. add Formatter to be able to turn off the way it prints
 type StackFrames []Frame
 
+// String formats Frame to string.
+func (f StackFrames) String() string {
+	var sb strings.Builder
+	sb.WriteString("[ ")
+
+	for i, frame := range f {
+		sb.WriteString(frame.String())
+		if i < len(f)-1 {
+			sb.WriteString(", ")
+		}
+	}
+	if sb.Len() > 2 {
+		sb.WriteString(" ")
+	}
+	sb.WriteString("]")
+	return sb.String()
+}
+
+// Format formats the frame according to the fmt.Formatter interface.
+// See Frame.Format for the formatting rules.
+func (f StackFrames) Format(s fmt.State, verb rune) {
+	for i, frame := range f {
+		frame.Format(s, verb)
+		if i < len(f)-1 {
+			io.WriteString(s, "\n\n")
+		}
+	}
+}
+
 func getFrame(skip FrameSkips) (Frame, bool) {
 	if skip == NoFrame {
 		return Frame{}, false

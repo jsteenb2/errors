@@ -243,17 +243,6 @@ func isT[T any](t *testing.T, v any) T {
 	return out
 }
 
-func isErr(t *testing.T, err error) bool {
-	t.Helper()
-
-	matches := err != nil
-	if !matches {
-		t.Fatalf("expected error:\n\t\tgot:\t%v", err)
-	}
-
-	return matches
-}
-
 func must(t *testing.T, outcome bool) {
 	t.Helper()
 
