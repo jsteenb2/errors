@@ -184,6 +184,33 @@ func Test_Errors(t *testing.T) {
 	}
 }
 
+func TestV(t *testing.T) {
+	type foo struct {
+		i int
+	}
+
+	t.Run("key val pairs are should be accessible", func(t *testing.T) {
+		err := errors.New("simple msg", errors.KVs("bool", true, "str", "string", "float", 3.14, "int", 1, "foo", foo{i: 3}))
+
+		eqV(t, err, "bool", true)
+		eqV(t, err, "str", "string")
+		eqV(t, err, "float", 3.14)
+		eqV(t, err, "int", 1)
+		eqV(t, err, "foo", foo{i: 3})
+
+		if v := errors.V(err, "non existent"); v != nil {
+			t.Errorf("unexpected value returned:\n\t\tgot:\t%#v", v)
+		}
+	})
+
+	t.Run("when parent error kv pair collides with wrapped error will take parent kv pair", func(t *testing.T) {
+		err := errors.New("simple msg", errors.KVs("str", "initial"))
+		err = errors.Wrap(err, errors.KVs("str", "wrapped"))
+
+		eqV(t, err, "str", "wrapped")
+	})
+}
+
 func eq[T comparable](t *testing.T, want, got T) bool {
 	t.Helper()
 
@@ -192,6 +219,14 @@ func eq[T comparable](t *testing.T, want, got T) bool {
 		t.Errorf("values do not match:\n\t\twant:\t%#v\n\t\tgot:\t%#v", want, got)
 	}
 	return matches
+}
+
+func eqV[T comparable](t *testing.T, err error, key string, want T) bool {
+	t.Helper()
+
+	got, ok := errors.V(err, key).(T)
+	must(t, eq(t, true, ok))
+	return eq(t, want, got)
 }
 
 func eqFields(t *testing.T, want, got []any) bool {
