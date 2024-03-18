@@ -114,6 +114,22 @@ func (err *e) Unwrap() error {
 	return err.wrappedErr
 }
 
+func (err *e) V(key string) (any, bool) {
+	for err := error(err); err != nil; err = errors.Unwrap(err) {
+		ee, ok := err.(*e)
+		if !ok {
+			continue
+		}
+
+		for _, kv := range ee.kvs {
+			if kv.K == key {
+				return kv.V, true
+			}
+		}
+	}
+	return nil, false
+}
+
 func (err *e) stackTrace() StackFrames {
 	var out StackFrames
 	for err := error(err); err != nil; err = errors.Unwrap(err) {
