@@ -19,6 +19,10 @@ const (
 	SkipCaller FrameSkips = 1
 )
 
+// JoinFormatFn is the join errors formatter. This allows the user to customize
+// the text output when calling Error() on the join error.
+type JoinFormatFn func(msg string, errs []error) string
+
 // Kind represents the category of the error type. A few examples of
 // error kinds are as follows:
 //
@@ -40,7 +44,7 @@ const (
 // target error is of kind "first":
 //
 //	err := errors.New("some error", errors.Kind("first"))
-//	stderrors.Is(errors.Kind("first"), err) // output is true
+//	errors.Is(err, errors.Kind("first")) // output is true
 type Kind string
 
 // Error returns the error string indicating the kind's error. This is

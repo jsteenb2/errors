@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"errors"
+	"cmp"
 )
 
 func newE(opts ...any) error {
@@ -9,6 +9,9 @@ func newE(opts ...any) error {
 
 	skipFrames := FrameSkips(3)
 	for _, o := range opts {
+		if o == nil {
+			continue
+		}
 		switch arg := o.(type) {
 		case string:
 			err.msg = arg
@@ -83,19 +86,22 @@ func (err *e) Fields() []any {
 		out  []any
 		kind Kind
 	)
-	for err := error(err); err != nil; err = errors.Unwrap(err) {
-		ee, ok := err.(*e)
-		if !ok {
-			continue
-		}
-
-		for _, kv := range ee.kvs {
+	for err := error(err); err != nil; err = Unwrap(err) {
+		em := getErrMeta(err)
+		for _, kv := range em.kvs {
 			out = append(out, kv.K, kv.V)
 		}
-		if kind == "" {
-			kind = ee.kind
+		kind = cmp.Or(kind, em.kind)
+		if ej, ok := err.(*joinE); ok {
+			innerKind, multiErrFields := ej.subErrFields()
+			kind = cmp.Or(kind, innerKind)
+			if len(multiErrFields) > 0 {
+				out = append(out, "multi_err", multiErrFields)
+			}
+			break
 		}
 	}
+
 	if kind != "" {
 		out = append(out, "err_kind", string(kind))
 	}
@@ -110,18 +116,18 @@ func (err *e) Fields() []any {
 	return out
 }
 
+func (err *e) Is(target error) bool {
+	kind, ok := target.(Kind)
+	return ok && err.kind == kind
+}
+
 func (err *e) Unwrap() error {
 	return err.wrappedErr
 }
 
 func (err *e) V(key string) (any, bool) {
-	for err := error(err); err != nil; err = errors.Unwrap(err) {
-		ee, ok := err.(*e)
-		if !ok {
-			continue
-		}
-
-		for _, kv := range ee.kvs {
+	for err := error(err); err != nil; err = Unwrap(err) {
+		for _, kv := range getErrMeta(err).kvs {
 			if kv.K == key {
 				return kv.V, true
 			}
@@ -132,10 +138,47 @@ func (err *e) V(key string) (any, bool) {
 
 func (err *e) stackTrace() StackFrames {
 	var out StackFrames
-	for err := error(err); err != nil; err = errors.Unwrap(err) {
-		if ee, ok := err.(*e); ok && ee.frame.FilePath != "" {
-			out = append(out, ee.frame)
+	for err := error(err); err != nil; err = Unwrap(err) {
+		em := getErrMeta(err)
+		if em.frame.FilePath == "" {
+			continue
+		}
+		out = append(out, em.frame)
+		if em.errType == errTypeJoin {
+			break
 		}
 	}
 	return out
+}
+
+type errMeta struct {
+	kind    Kind
+	frame   Frame
+	kvs     []KV
+	errType string
+}
+
+const (
+	errTypeE    = "e"
+	errTypeJoin = "j"
+)
+
+func getErrMeta(err error) errMeta {
+	var em errMeta
+	switch err := err.(type) {
+	case *e:
+		em.kind, em.frame, em.kvs, em.errType = err.kind, err.frame, err.kvs, errTypeE
+	case *joinE:
+		em.kind, em.frame, em.kvs, em.errType = err.kind, err.frame, err.kvs, errTypeJoin
+	}
+	return em
+}
+
+func getKind(err error) Kind {
+	for ; err != nil; err = Unwrap(err) {
+		if em := getErrMeta(err); em.kind != "" {
+			return em.kind
+		}
+	}
+	return ""
 }

@@ -1,7 +1,7 @@
 package errors_test
 
 import (
-	stderrors "errors"
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -12,12 +12,12 @@ func TestWrap(t *testing.T) {
 	t.Run("simple wrapped error is returned when calling std lib errors.Unwrap", func(t *testing.T) {
 		baseErr := errors.New("first error")
 
-		if unwrapped := stderrors.Unwrap(baseErr); unwrapped != nil {
+		if unwrapped := errors.Unwrap(baseErr); unwrapped != nil {
 			t.Fatalf("recieved unexpected unwrapped error:\n\t\tgot:\t%v", unwrapped)
 		}
 
 		wrappedErr := errors.Wrap(baseErr)
-		if unwrapped := stderrors.Unwrap(wrappedErr); unwrapped == nil {
+		if unwrapped := errors.Unwrap(wrappedErr); unwrapped == nil {
 			t.Fatalf("recieved unexpected nil unwrapped error")
 		}
 	})
@@ -77,6 +77,13 @@ func eqV[T comparable](t *testing.T, err error, key string, want T) bool {
 
 func eqFields(t *testing.T, want, got []any) bool {
 	t.Helper()
+
+	defer func() {
+		if t.Failed() {
+			b, _ := json.MarshalIndent(got, "", "  ")
+			t.Logf("got: %s", string(b))
+		}
+	}()
 
 	if matches := eqLen(t, len(want), got); !matches {
 		return matches
