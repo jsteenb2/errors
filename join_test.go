@@ -1,6 +1,7 @@
 package errors_test
 
 import (
+	stderrors "errors"
 	"fmt"
 	"testing"
 
@@ -82,24 +83,51 @@ func TestJoin(t *testing.T) {
 		)
 		wantFields := []any{
 			// parent Join error
-			"kj1", "vj1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:74[TestJoin.func4]"},
+			"kj1", "vj1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:75[TestJoin.func4]"},
 			// first err
-			"err_0", []any{"ki1", "vi1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:75[TestJoin.func4]"}},
+			"err_0", []any{"ki1", "vi1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:76[TestJoin.func4]"}},
 			// third err
-			"err_2", []any{"ki3", "vi3", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:77[TestJoin.func4]"}},
+			"err_2", []any{"ki3", "vi3", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:78[TestJoin.func4]"}},
 			// fourth err
 			"err_3", []any{
-				"stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:78[TestJoin.func4]"},
-				"err_0", []any{"stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:79[TestJoin.func4]"}},
+				"stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:79[TestJoin.func4]"},
+				"err_0", []any{"stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:80[TestJoin.func4]"}},
 			},
 		}
 		eqFields(t, wantFields, errors.Fields(err))
 
 		unwrapped := errors.Unwrap(err)
-		wantFields = []any{"ki1", "vi1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:75[TestJoin.func4]"}}
+		wantFields = []any{"ki1", "vi1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:76[TestJoin.func4]"}}
 		eqFields(t, wantFields, errors.Fields(unwrapped))
 
 		sentinelUnwrapped := errors.Unwrap(unwrapped)
 		eqFields(t, nil, errors.Fields(sentinelUnwrapped))
+	})
+}
+
+func TestDisjoin(t *testing.T) {
+	t.Run("with nil error should return nil", func(t *testing.T) {
+		errs := errors.Disjoin(nil)
+		if errs != nil {
+			t.Fatalf("unexpected errs returned:\n\t\tgot:\t%#v", errs)
+		}
+	})
+
+	t.Run("with std errors joined errors should unwrap", func(t *testing.T) {
+		innerErr := fmt.Errorf("simple err")
+
+		errs := errors.Disjoin(stderrors.Join(innerErr))
+
+		must(t, eqLen(t, 1, errs))
+		eq(t, innerErr, errs[0])
+	})
+
+	t.Run("with Join error should unwrap", func(t *testing.T) {
+		innerErr := fmt.Errorf("simple err")
+
+		errs := errors.Disjoin(errors.Join(innerErr))
+
+		must(t, eqLen(t, 1, errs))
+		eq(t, innerErr, errs[0])
 	})
 }

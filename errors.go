@@ -33,6 +33,23 @@ func Join(opts ...any) error {
 	return newJoinE(opts...)
 }
 
+// Disjoin separates joined errors.
+func Disjoin(err error) []error {
+	if err == nil {
+		return nil
+	}
+
+	if stdJoin, ok := err.(interface{ Unwrap() []error }); ok {
+		return stdJoin.Unwrap()
+	}
+
+	if ej, ok := err.(*joinE); ok {
+		return ej.errs
+	}
+
+	return nil
+}
+
 // Fields returns logging fields for a given error.
 func Fields(err error) []any {
 	if err == nil {
