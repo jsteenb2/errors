@@ -23,6 +23,16 @@ func Wrap(err error, opts ...any) error {
 	return newE(passedOpts...)
 }
 
+// Join returns a new multi error.
+//
+// TODO:
+//   - play with Join(opts ...any) and Join(errs []error, opts ...any) sigs
+//     and ask for feedback regarding tradeoffs with type safety of first arg.
+//     As of writing some tests, I kind of dig the loose Join(opts ...any).
+func Join(opts ...any) error {
+	return newJoinE(opts...)
+}
+
 // Fields returns logging fields for a given error.
 func Fields(err error) []any {
 	if err == nil {
@@ -41,8 +51,10 @@ func Fields(err error) []any {
 // TODO:
 //  1. make this more robust with Is
 //  2. determine if its even worth exposing an accessor for this private method
+//  3. allow for StackTraces() to accommodate joined errors, perhaps returning a map[string]StackFrames
+//     or some graph representation would be awesome.
 func StackTrace(err error) StackFrames {
-	ee, ok := err.(*e)
+	ee, ok := err.(interface{ stackTrace() StackFrames })
 	if !ok {
 		return nil
 	}

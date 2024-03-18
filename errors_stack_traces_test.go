@@ -181,6 +181,43 @@ func Test_Errors(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "with wrapped joined  errors error with inner kind",
+			input: errors.Wrap(
+				errors.Wrap(
+					errors.Join(
+						errors.Wrap(
+							errors.New("first error", errors.Kind("inner")),
+						),
+						errors.New("second error"),
+					),
+				),
+			),
+			want: wants{
+				msg: `2 errors occurred:
+	* first error
+	* second error
+`,
+				fields: []any{
+					"multi_err", []any{
+						"err_0", []any{
+							"err_kind", "inner",
+							"stack_trace", []string{
+								"github.com/jsteenb2/errors/errors_stack_traces_test.go:189[Test_Errors]",
+								"github.com/jsteenb2/errors/errors_stack_traces_test.go:190[Test_Errors]",
+							},
+						},
+						"err_1", []any{"stack_trace", []string{"github.com/jsteenb2/errors/errors_stack_traces_test.go:192[Test_Errors]"}},
+					},
+					"err_kind", "inner",
+					"stack_trace", []string{
+						"github.com/jsteenb2/errors/errors_stack_traces_test.go:186[Test_Errors]",
+						"github.com/jsteenb2/errors/errors_stack_traces_test.go:187[Test_Errors]",
+						"github.com/jsteenb2/errors/errors_stack_traces_test.go:188[Test_Errors]",
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

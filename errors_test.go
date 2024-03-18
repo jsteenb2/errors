@@ -1,6 +1,7 @@
 package errors_test
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -76,6 +77,13 @@ func eqV[T comparable](t *testing.T, err error, key string, want T) bool {
 
 func eqFields(t *testing.T, want, got []any) bool {
 	t.Helper()
+
+	defer func() {
+		if t.Failed() {
+			b, _ := json.MarshalIndent(got, "", "  ")
+			t.Logf("got: %s", string(b))
+		}
+	}()
 
 	if matches := eqLen(t, len(want), got); !matches {
 		return matches
