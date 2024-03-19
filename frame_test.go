@@ -16,38 +16,27 @@ func TestStackTrace_SimpleError(t *testing.T) {
 	eq(t, "[ github.com/jsteenb2/errors/frame_test.go:11[TestStackTrace_SimpleError] ]", frames.String())
 
 	sVal := fmt.Sprintf("%s", frames)
-	eq(t, "frame_test.go", sVal)
+	eq(t, "[ frame_test.go ]", sVal)
 
 	sVal = fmt.Sprintf("%s", frames[0])
 	eq(t, "frame_test.go", sVal)
 
-	wantSPlusVal := `github.com/jsteenb2/errors_test.TestStackTrace_SimpleError
-	github.com/jsteenb2/errors/frame_test.go`
+	wantSPlusVal := `github.com/jsteenb2/errors/frame_test.go:11[TestStackTrace_SimpleError]`
 
-	sPlusVal := fmt.Sprintf("%+s", frames)
-	eq(t, wantSPlusVal, sPlusVal)
-
-	sPlusVal = fmt.Sprintf("%+s", frames[0])
-	eq(t, wantSPlusVal, sPlusVal)
+	eq(t, "[ "+wantSPlusVal+" ]", fmt.Sprintf("%+s", frames))
+	eq(t, wantSPlusVal, fmt.Sprintf("%+s", frames[0]))
 
 	wantLine := "11"
-	dVal := fmt.Sprintf("%d", frames)
-	eq(t, wantLine, dVal)
-	dVal = fmt.Sprintf("%d", frames[0])
-	eq(t, wantLine, dVal)
+	eq(t, "[ "+wantLine+" ]", fmt.Sprintf("%d", frames))
+	eq(t, wantLine, fmt.Sprintf("%d", frames[0]))
 
 	wantFile := "frame_test.go:" + wantLine
-	vVal := fmt.Sprintf("%v", frames)
-	eq(t, wantFile, vVal)
-	vVal = fmt.Sprintf("%v", frames[0])
-	eq(t, wantFile, vVal)
+	eq(t, "[ "+wantFile+" ]", fmt.Sprintf("%v", frames))
+	eq(t, wantFile, fmt.Sprintf("%v", frames[0]))
 
-	wantVPlusVal := `github.com/jsteenb2/errors_test.TestStackTrace_SimpleError
-	github.com/jsteenb2/errors/` + wantFile
-	vPlusVal := fmt.Sprintf("%+v", frames)
-	eq(t, wantVPlusVal, vPlusVal)
-	vPlusVal = fmt.Sprintf("%+v", frames[0])
-	eq(t, wantVPlusVal, vPlusVal)
+	wantVPlusVal := `github.com/jsteenb2/errors/` + wantFile + `[TestStackTrace_SimpleError]`
+	eq(t, "[ "+wantVPlusVal+" ]", fmt.Sprintf("%+v", frames))
+	eq(t, wantVPlusVal, fmt.Sprintf("%+v", frames[0]))
 }
 
 func TestStackTrace_WrappedError(t *testing.T) {
@@ -58,39 +47,30 @@ func TestStackTrace_WrappedError(t *testing.T) {
 	frames := errors.StackTrace(err)
 	must(t, eqLen(t, 2, frames))
 
-	wantStr := "[ github.com/jsteenb2/errors/frame_test.go:54[TestStackTrace_WrappedError], github.com/jsteenb2/errors/frame_test.go:55[TestStackTrace_WrappedError] ]"
+	wantStr := "[ github.com/jsteenb2/errors/frame_test.go:43[TestStackTrace_WrappedError], github.com/jsteenb2/errors/frame_test.go:44[TestStackTrace_WrappedError] ]"
 	eq(t, wantStr, frames.String())
 
-	eq(t, "frame_test.go\n\nframe_test.go", fmt.Sprintf("%s", frames))
+	eq(t, "[ frame_test.go, frame_test.go ]", fmt.Sprintf("%s", frames))
 	eq(t, "frame_test.go", fmt.Sprintf("%s", frames[0]))
 	eq(t, "frame_test.go", fmt.Sprintf("%s", frames[1]))
 
-	wantSPlusVal := `github.com/jsteenb2/errors_test.TestStackTrace_WrappedError
-	github.com/jsteenb2/errors/frame_test.go
-
-github.com/jsteenb2/errors_test.TestStackTrace_WrappedError
-	github.com/jsteenb2/errors/frame_test.go`
+	wantSPlusVal := `[ github.com/jsteenb2/errors/frame_test.go:43[TestStackTrace_WrappedError], github.com/jsteenb2/errors/frame_test.go:44[TestStackTrace_WrappedError] ]`
 	eq(t, wantSPlusVal, fmt.Sprintf("%+s", frames))
 
-	wantSPlusVal = `github.com/jsteenb2/errors_test.TestStackTrace_WrappedError
-	github.com/jsteenb2/errors/frame_test.go`
-	eq(t, wantSPlusVal, fmt.Sprintf("%+s", frames[0]))
-	eq(t, wantSPlusVal, fmt.Sprintf("%+s", frames[1]))
+	eq(t, `github.com/jsteenb2/errors/frame_test.go:43[TestStackTrace_WrappedError]`, fmt.Sprintf("%+s", frames[0]))
+	eq(t, `github.com/jsteenb2/errors/frame_test.go:44[TestStackTrace_WrappedError]`, fmt.Sprintf("%+s", frames[1]))
 
-	eq(t, "54\n\n55", fmt.Sprintf("%d", frames))
-	eq(t, "54", fmt.Sprintf("%d", frames[0]))
-	eq(t, "55", fmt.Sprintf("%d", frames[1]))
+	eq(t, "[ 43, 44 ]", fmt.Sprintf("%d", frames))
+	eq(t, "43", fmt.Sprintf("%d", frames[0]))
+	eq(t, "44", fmt.Sprintf("%d", frames[1]))
 
-	wantFile := `frame_test.go:54
-
-frame_test.go:55`
+	wantFile := `[ frame_test.go:43, frame_test.go:44 ]`
 	eq(t, wantFile, fmt.Sprintf("%v", frames))
-	eq(t, "frame_test.go:54", fmt.Sprintf("%v", frames[0]))
-	eq(t, "frame_test.go:55", fmt.Sprintf("%v", frames[1]))
+	eq(t, "frame_test.go:43", fmt.Sprintf("%v", frames[0]))
+	eq(t, "frame_test.go:44", fmt.Sprintf("%v", frames[1]))
 
-	wantVPlusFrame := `github.com/jsteenb2/errors_test.TestStackTrace_WrappedError
-	github.com/jsteenb2/errors/frame_test.go`
-	eq(t, wantVPlusFrame+":54\n\n"+wantVPlusFrame+":55", fmt.Sprintf("%+v", frames))
-	eq(t, wantVPlusFrame+":54", fmt.Sprintf("%+v", frames[0]))
-	eq(t, wantVPlusFrame+":55", fmt.Sprintf("%+v", frames[1]))
+	wantVPlusFrame := `[ github.com/jsteenb2/errors/frame_test.go:43[TestStackTrace_WrappedError], github.com/jsteenb2/errors/frame_test.go:44[TestStackTrace_WrappedError] ]`
+	eq(t, wantVPlusFrame, fmt.Sprintf("%+v", frames))
+	eq(t, "github.com/jsteenb2/errors/frame_test.go:43[TestStackTrace_WrappedError]", fmt.Sprintf("%+v", frames[0]))
+	eq(t, "github.com/jsteenb2/errors/frame_test.go:44[TestStackTrace_WrappedError]", fmt.Sprintf("%+v", frames[1]))
 }

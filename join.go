@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -71,6 +72,18 @@ type joinE struct {
 
 func (err *joinE) Error() string {
 	return err.formatFn(err.msg, err.errs)
+}
+
+func (err *joinE) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		fallthrough
+	case 's':
+		io.WriteString(s, err.Error())
+		err.stackTrace().Format(s, fmtInline)
+	case 'q':
+		fmt.Fprintf(s, "%q", err.Error())
+	}
 }
 
 func (err *joinE) Fields() []any {

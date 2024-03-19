@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const fmtInline = 'i'
+
 // Frame is a single step in stack trace.
 type Frame struct {
 	FilePath string
@@ -38,9 +40,7 @@ func (f Frame) Format(s fmt.State, verb rune) {
 	case 's':
 		switch {
 		case s.Flag('+'):
-			io.WriteString(s, f.Fn)
-			io.WriteString(s, "\n\t")
-			io.WriteString(s, f.FilePath)
+			io.WriteString(s, f.String())
 		default:
 			io.WriteString(s, path.Base(f.FilePath))
 		}
@@ -48,8 +48,14 @@ func (f Frame) Format(s fmt.State, verb rune) {
 		io.WriteString(s, strconv.Itoa(f.Line))
 	case 'n':
 		io.WriteString(s, funcname(f.Fn))
+	case fmtInline:
+		io.WriteString(s, f.String())
 	case 'v':
-		f.Format(s, 's')
+		if s.Flag('+') {
+			f.Format(s, 's')
+			return
+		}
+		io.WriteString(s, path.Base(f.FilePath))
 		io.WriteString(s, ":")
 		f.Format(s, 'd')
 	}
@@ -83,10 +89,12 @@ func (f StackFrames) String() string {
 // Format formats the frame according to the fmt.Formatter interface.
 // See Frame.Format for the formatting rules.
 func (f StackFrames) Format(s fmt.State, verb rune) {
+	io.WriteString(s, "[ ")
+	defer func() { io.WriteString(s, " ]") }()
 	for i, frame := range f {
 		frame.Format(s, verb)
 		if i < len(f)-1 {
-			io.WriteString(s, "\n\n")
+			io.WriteString(s, ", ")
 		}
 	}
 }

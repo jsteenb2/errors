@@ -15,7 +15,10 @@ func TestJoin(t *testing.T) {
 		err := errors.Join(errors.New("first multi error"))
 
 		gotMsg := err.Error()
-		eq(t, "1 error occurred:\n\t* first multi error\n", gotMsg)
+		wantMsg := `1 error occurred:
+	* first multi error [ github.com/jsteenb2/errors/join_test.go:15[TestJoin.func1] ]
+`
+		eq(t, wantMsg, gotMsg)
 
 		unwrappedErr := errors.Unwrap(err)
 		if unwrappedErr == nil {
@@ -33,8 +36,8 @@ func TestJoin(t *testing.T) {
 		)
 
 		wantMsg := `2 errors occurred:
-	* err 1
-	* err 2
+	* err 1 [ github.com/jsteenb2/errors/join_test.go:34[TestJoin.func2] ]
+	* err 2 [ github.com/jsteenb2/errors/join_test.go:35[TestJoin.func2] ]
 `
 		eq(t, wantMsg, err.Error())
 
@@ -58,7 +61,7 @@ func TestJoin(t *testing.T) {
 		)
 
 		wantMsg := `2 errors occurred:
-	* err 1
+	* err 1 [ github.com/jsteenb2/errors/join_test.go:59[TestJoin.func3] ]
 	* sentinel err
 `
 		eq(t, wantMsg, err.Error())
@@ -83,21 +86,21 @@ func TestJoin(t *testing.T) {
 		)
 		wantFields := []any{
 			// parent Join error
-			"kj1", "vj1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:75[TestJoin.func4]"},
+			"kj1", "vj1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:78[TestJoin.func4]"},
 			// first err
-			"err_0", []any{"ki1", "vi1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:76[TestJoin.func4]"}},
+			"err_0", []any{"ki1", "vi1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:79[TestJoin.func4]"}},
 			// third err
-			"err_2", []any{"ki3", "vi3", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:78[TestJoin.func4]"}},
+			"err_2", []any{"ki3", "vi3", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:81[TestJoin.func4]"}},
 			// fourth err
 			"err_3", []any{
-				"stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:79[TestJoin.func4]"},
-				"err_0", []any{"stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:80[TestJoin.func4]"}},
+				"stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:82[TestJoin.func4]"},
+				"err_0", []any{"stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:83[TestJoin.func4]"}},
 			},
 		}
 		eqFields(t, wantFields, errors.Fields(err))
 
 		unwrapped := errors.Unwrap(err)
-		wantFields = []any{"ki1", "vi1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:76[TestJoin.func4]"}}
+		wantFields = []any{"ki1", "vi1", "err_kind", "foo", "stack_trace", []string{"github.com/jsteenb2/errors/join_test.go:79[TestJoin.func4]"}}
 		eqFields(t, wantFields, errors.Fields(unwrapped))
 
 		sentinelUnwrapped := errors.Unwrap(unwrapped)

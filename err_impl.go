@@ -2,6 +2,8 @@ package errors
 
 import (
 	"cmp"
+	"fmt"
+	"io"
 )
 
 func newE(opts ...any) error {
@@ -69,6 +71,18 @@ func (err *e) Error() string {
 		msg += err.wrappedErr.Error()
 	}
 	return msg
+}
+
+func (err *e) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		fallthrough
+	case 's':
+		io.WriteString(s, err.Error()+" ")
+		err.stackTrace().Format(s, fmtInline)
+	case 'q':
+		fmt.Fprintf(s, "%q", err.Error())
+	}
 }
 
 // Fields represents the meaningful logging fields from the error. These include
