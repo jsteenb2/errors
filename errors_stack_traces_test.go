@@ -195,8 +195,8 @@ func Test_Errors(t *testing.T) {
 			),
 			want: wants{
 				msg: `2 errors occurred:
-	* first error
-	* second error
+	* first error [ github.com/jsteenb2/errors/errors_stack_traces_test.go:189[Test_Errors], github.com/jsteenb2/errors/errors_stack_traces_test.go:190[Test_Errors] ]
+	* second error [ github.com/jsteenb2/errors/errors_stack_traces_test.go:192[Test_Errors] ]
 `,
 				fields: []any{
 					"multi_err", []any{
@@ -226,4 +226,40 @@ func Test_Errors(t *testing.T) {
 			eqFields(t, tt.want.fields, errors.Fields(tt.input))
 		})
 	}
+}
+
+func TestE_Format(t *testing.T) {
+	t.Run("e error", func(t *testing.T) {
+		err := errors.Wrap(
+			errors.New("inner msg"),
+			"outter",
+		)
+
+		want := `outter: inner msg [ github.com/jsteenb2/errors/errors_stack_traces_test.go:233[TestE_Format.func1], github.com/jsteenb2/errors/errors_stack_traces_test.go:234[TestE_Format.func1] ]`
+		eq(t, want, fmt.Sprintf("%v", err))
+		eq(t, want, fmt.Sprintf("%s", err))
+
+		want = `"outter: inner msg"`
+		eq(t, want, fmt.Sprintf("%q", err))
+	})
+
+	t.Run("joinE error", func(t *testing.T) {
+		err := errors.Join(
+			errors.New("simple"),
+			errors.Wrap(
+				errors.New("deep"),
+				"outter msg",
+			),
+		)
+
+		want := `2 errors occurred:
+	* simple [ github.com/jsteenb2/errors/errors_stack_traces_test.go:248[TestE_Format.func2] ]
+	* outter msg: deep [ github.com/jsteenb2/errors/errors_stack_traces_test.go:249[TestE_Format.func2], github.com/jsteenb2/errors/errors_stack_traces_test.go:250[TestE_Format.func2] ]
+[ github.com/jsteenb2/errors/errors_stack_traces_test.go:247[TestE_Format.func2] ]`
+		eq(t, want, fmt.Sprintf("%v", err))
+		eq(t, want, fmt.Sprintf("%s", err))
+
+		want = "\"2 errors occurred:\\n\\t* simple [ github.com/jsteenb2/errors/errors_stack_traces_test.go:248[TestE_Format.func2] ]\\n\\t* outter msg: deep [ github.com/jsteenb2/errors/errors_stack_traces_test.go:249[TestE_Format.func2], github.com/jsteenb2/errors/errors_stack_traces_test.go:250[TestE_Format.func2] ]\\n\""
+		eq(t, want, fmt.Sprintf("%q", err))
+	})
 }
