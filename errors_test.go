@@ -55,6 +55,13 @@ func TestV(t *testing.T) {
 
 		eqV(t, err, "str", "wrapped")
 	})
+	
+	t.Run("when provided KVs should incorporate them as they are without key mapping", func(t *testing.T) {
+		err := errors.New("simple msg", errors.KVs(errors.KVs("unspread", "vals"), errors.KV{K: "indiv", V: "1"}))
+		
+		eqV(t, err, "unspread", "vals")
+		eqV(t, err, "indiv", "1")
+	})
 }
 
 func eq[T comparable](t *testing.T, want, got T) bool {

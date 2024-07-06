@@ -82,6 +82,14 @@ func KVs(fields ...any) []KV {
 	for i := 0; i < len(fields); i += 2 {
 		var kv KV
 		switch t := fields[i].(type) {
+		case []KV:
+			out = append(out, t...)
+			i--
+			continue
+		case KV:
+			out = append(out, t)
+			i--
+			continue
 		case string:
 			kv.K = t
 		case fmt.Stringer:
