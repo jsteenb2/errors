@@ -17,6 +17,14 @@ func newJoinE(opts ...any) error {
 	// since we're calling newE from 3 frames away instead of 2
 	baseOpts[0] = SkipCaller
 
+	addErrs := func(errsIn ...error) {
+		for _, err := range errsIn {
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+	
 	// here we'll make use of a split loop, so that we aren't
 	// polluting the newE with multi-err concerns it does not
 	// need to be bothered with.
@@ -26,9 +34,9 @@ func newJoinE(opts ...any) error {
 		}
 		switch v := o.(type) {
 		case error:
-			errs = append(errs, v)
+			addErrs(v)
 		case []error:
-			errs = append(errs, v...)
+			addErrs(v...)
 		case JoinFormatFn:
 			if v != nil {
 				formatFn = v

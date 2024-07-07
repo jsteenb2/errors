@@ -81,7 +81,9 @@ func TestJoin(t *testing.T) {
 			errors.New("err 3", errors.KVs("ki3", "vi3")),
 			errors.Join(
 				errors.New("err 4"),
+				nil, nil, nil, // verify we don't get nil errors
 			),
+			(error)(nil), // verify we don't get nil error
 			errors.KVs("kj1", "vj1"),
 		)
 		wantFields := []any{
